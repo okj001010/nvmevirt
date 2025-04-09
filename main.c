@@ -585,6 +585,9 @@ static void __print_base_config(void)
 	case SAMSUNG_970PRO:
 		type = "Samsung 970 Pro SSD";
 		break;
+	case SAMSUNG_870QVO:
+		type = "Samsung 870 QVO SSD";
+		break;
 	case ZNS_PROTOTYPE:
 		type = "ZNS SSD Prototype";
 		break;

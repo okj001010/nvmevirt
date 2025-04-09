@@ -111,9 +111,11 @@ void ssd_init_params(struct ssdparams *spp, uint64_t capacity, uint32_t nparts)
 	spp->pg_4kb_rd_lat[CELL_TYPE_LSB] = NAND_4KB_READ_LATENCY_LSB;
 	spp->pg_4kb_rd_lat[CELL_TYPE_MSB] = NAND_4KB_READ_LATENCY_MSB;
 	spp->pg_4kb_rd_lat[CELL_TYPE_CSB] = NAND_4KB_READ_LATENCY_CSB;
+	spp->pg_4kb_rd_lat[CELL_TYPE_TSB] = NAND_4KB_READ_LATENCY_TSB;
 	spp->pg_rd_lat[CELL_TYPE_LSB] = NAND_READ_LATENCY_LSB;
 	spp->pg_rd_lat[CELL_TYPE_MSB] = NAND_READ_LATENCY_MSB;
 	spp->pg_rd_lat[CELL_TYPE_CSB] = NAND_READ_LATENCY_CSB;
+	spp->pg_rd_lat[CELL_TYPE_TSB] = NAND_READ_LATENCY_TSB;
 	spp->pg_wr_lat = NAND_PROG_LATENCY;
 	spp->blk_er_lat = NAND_ERASE_LATENCY;
 	spp->max_ch_xfer_size = MAX_CH_XFER_SIZE;
@@ -403,6 +405,7 @@ uint64_t ssd_advance_nand(struct ssd *ssd, struct nand_cmd *ncmd)
 		while (remaining) {
 			xfer_size = min(remaining, (uint64_t)spp->max_ch_xfer_size);
 			chnl_etime = chmodel_request(ch->perf_model, chnl_stime, xfer_size);
+			// chnl_etime += ecc_decode_latency(spp, xfer_size);
 
 			if (ncmd->interleave_pci_dma) { /* overlap pci transfer with nand ch transfer*/
 				completed_time = ssd_advance_pcie(ssd, chnl_etime, xfer_size);
