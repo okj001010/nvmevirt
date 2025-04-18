@@ -3,6 +3,24 @@
 #ifndef _NVMEVIRT_SSD_CONFIG_H
 #define _NVMEVIRT_SSD_CONFIG_H
 
+
+/*
+	//0.5K 6month
+		read_retry_count_lfsr_1 = (randomNumber < 0.5 * 4294967295) ? 12 : 13;
+		read_retry_count_tailcut_1 = (randomNumber < 0.9* 4294967295) ? 11 : 12;
+		read_retry_count_star_1 = (randomNumber < 0.5* 4294967295) ? 7 : 8;
+
+		
+		read_retry_count_lfsr_2 = (randomNumber < 0.3* 4294967295) ? 28 : 29;
+		read_retry_count_tailcut_2 = (randomNumber < 0.6* 4294967295) ? 23 : 24;
+		read_retry_count_star_2 = (randomNumber < 0.9* 4294967295) ? 12 : 13;
+
+*/
+
+
+
+
+
 /* SSD Model */
 #define INTEL_OPTANE 0
 #define SAMSUNG_970PRO 1
@@ -90,9 +108,11 @@ static_assert((ONESHOT_PAGE_SIZE % FLASH_PAGE_SIZE) == 0);
 #define NAND_4KB_READ_LATENCY_LSB (35760 - 6000) //ns
 #define NAND_4KB_READ_LATENCY_MSB (35760 + 6000) //ns
 #define NAND_4KB_READ_LATENCY_CSB (0) //not used
+#define NAND_4KB_READ_LATENCY_TSB (0) //not used
 #define NAND_READ_LATENCY_LSB (36013 - 6000)
 #define NAND_READ_LATENCY_MSB (36013 + 6000)
 #define NAND_READ_LATENCY_CSB (0) //not used
+#define NAND_READ_LATENCY_TSB (0) //not used
 #define NAND_PROG_LATENCY (185000)
 #define NAND_ERASE_LATENCY (0)
 
@@ -112,6 +132,16 @@ static_assert((ONESHOT_PAGE_SIZE % FLASH_PAGE_SIZE) == 0);
 #elif (BASE_SSD == SAMSUNG_870QVO)
 #define NR_NAMESPACES 1
 
+#define LFSR_1 12.5
+#define LFSR_2 28.7
+#define TAILCUT_1 11.1
+#define TAILCUT_2 23.4
+#define STAR_1 7.5
+#define STAR_2 12.1
+
+
+#define READ_LATENCY (110000 * TAILCUT_1)
+
 #define NS_SSD_TYPE_0 SSD_TYPE_CONV
 #define NS_CAPACITY_0 (0)
 #define NS_SSD_TYPE_1 NS_SSD_TYPE_0
@@ -124,41 +154,44 @@ static_assert((ONESHOT_PAGE_SIZE % FLASH_PAGE_SIZE) == 0);
 #define NAND_CHANNELS (8)
 #define LUNS_PER_NAND_CH (2)
 #define PLNS_PER_LUN (1)
-#define FLASH_PAGE_SIZE KB(16)
-#define ONESHOT_PAGE_SIZE (FLASH_PAGE_SIZE * 4)
+#define FLASH_PAGE_SIZE KB(32)
+#define ONESHOT_PAGE_SIZE (FLASH_PAGE_SIZE * 1)
 #define BLKS_PER_PLN (8192)
 #define BLK_SIZE (0) /*BLKS_PER_PLN should not be 0 */
+
+
 
 #define MAX_CH_XFER_SIZE KB(16) /* to overlap with pcie transfer */
 #define WRITE_UNIT_SIZE (512)
 
 #define NAND_CHANNEL_BANDWIDTH (1200ull) //MB/s
-#define PCIE_BANDWIDTH (560ull) //MB/s
-// #define SATA_BANDWIDTH (560ull) //MB/s		????????????
+#define PCIE_BANDWIDTH (3360ull) //MB/s
 
-#define NAND_4KB_READ_LATENCY_LSB (110000) //ns
-#define NAND_4KB_READ_LATENCY_MSB (110000) //ns
-#define NAND_4KB_READ_LATENCY_CSB (110000) //ns
-#define NAND_4KB_READ_LATENCY_TSB (110000) //ns
-#define NAND_READ_LATENCY_LSB (110000)
-#define NAND_READ_LATENCY_MSB (110000)
-#define NAND_READ_LATENCY_CSB (110000)
-#define NAND_READ_LATENCY_TSB (110000)
+#define NAND_4KB_READ_LATENCY_LSB (READ_LATENCY) //ns
+#define NAND_4KB_READ_LATENCY_MSB (READ_LATENCY) //ns
+#define NAND_4KB_READ_LATENCY_CSB (READ_LATENCY) //ns
+#define NAND_4KB_READ_LATENCY_TSB (READ_LATENCY) //ns
+#define NAND_READ_LATENCY_LSB (READ_LATENCY)
+#define NAND_READ_LATENCY_MSB (READ_LATENCY)
+#define NAND_READ_LATENCY_CSB (READ_LATENCY)
+#define NAND_READ_LATENCY_TSB (READ_LATENCY)
 #define NAND_PROG_LATENCY (2000000)
-#define NAND_ERASE_LATENCY (3500000)
+#define NAND_ERASE_LATENCY (0)
 
 #define FW_4KB_READ_LATENCY (21500)
 #define FW_READ_LATENCY (30490)
 #define FW_WBUF_LATENCY0 (4000)
 #define FW_WBUF_LATENCY1 (460)
 #define FW_CH_XFER_LATENCY (0)
-#define OP_AREA_PERCENT (0.10)
+#define OP_AREA_PERCENT (0.07)
+
 
 #define GLOBAL_WB_SIZE (NAND_CHANNELS * LUNS_PER_NAND_CH * ONESHOT_PAGE_SIZE * 2)
 #define WRITE_EARLY_COMPLETION 1
 
 #define LBA_BITS (9)
 #define LBA_SIZE (1 << LBA_BITS)
+
 
 #elif (BASE_SSD == ZNS_PROTOTYPE)
 #define NR_NAMESPACES 1

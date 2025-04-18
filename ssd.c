@@ -361,6 +361,8 @@ uint64_t ssd_advance_write_buffer(struct ssd *ssd, uint64_t request_time, uint64
 	return nsecs_latest;
 }
 
+
+
 uint64_t ssd_advance_nand(struct ssd *ssd, struct nand_cmd *ncmd)
 {
 	int c = ncmd->cmd;
@@ -373,9 +375,22 @@ uint64_t ssd_advance_nand(struct ssd *ssd, struct nand_cmd *ncmd)
 	struct ssd_channel *ch;
 	struct ppa *ppa = ncmd->ppa;
 	uint32_t cell;
-	NVMEV_DEBUG(
-		"SSD: %p, Enter stime: %lld, ch %d lun %d blk %d page %d command %d ppa 0x%llx\n",
-		ssd, ncmd->stime, ppa->g.ch, ppa->g.lun, ppa->g.blk, ppa->g.pg, c, ppa->ppa);
+	uint64_t randomNumber = prandom_u32();
+
+	uint64_t read_retry_count_lfsr_1;
+	uint64_t read_retry_count_tailcut_1;
+	uint64_t read_retry_count_star_1;
+
+	uint64_t read_retry_count_lfsr_2;
+	uint64_t read_retry_count_tailcut_2;
+	uint64_t read_retry_count_star_2;
+
+	uint64_t read_retry_count;
+	uint32_t rc;
+
+	// NVMEV_INFO(
+	// 	"SSD: %p, Enter stime: %lld, ch %d lun %d blk %d page %d command %d ppa 0x%llx\n",
+	// 	ssd, ncmd->stime, ppa->g.ch, ppa->g.lun, ppa->g.blk, ppa->g.pg, c, ppa->ppa);
 
 	if (ppa->ppa == UNMAPPED_PPA) {
 		NVMEV_ERROR("Error ppa 0x%llx\n", ppa->ppa);
@@ -388,11 +403,37 @@ uint64_t ssd_advance_nand(struct ssd *ssd, struct nand_cmd *ncmd)
 	cell = get_cell(ssd, ppa);
 	remaining = ncmd->xfer_size;
 
+
 	switch (c) {
 	case NAND_READ:
 		/* read: perform NAND cmd first */
 		nand_stime = max(lun->next_lun_avail_time, cmd_stime);
 
+			// print NAND INFO of read latency
+			NVMEV_INFO(
+				"SSD: %p, NAND Read stime: %lld, ch %d lun %d blk %d page %d command %d ppa 0x%llx\n",
+				ssd, nand_stime, ppa->g.ch, ppa->g.lun, ppa->g.blk, ppa->g.pg, c, ppa->ppa);
+
+			NVMEV_INFO("READ DEBUG → cell: %u, 4KB_LAT: %llu ns, full_pg_LAT: %llu ns, xfer_size: %llu",
+				cell, spp->pg_4kb_rd_lat[cell], spp->pg_rd_lat[cell], ncmd->xfer_size);
+
+
+		// //0.5K 6month
+		// read_retry_count_lfsr_1 = (randomNumber < 0.5 * 4294967295) ? 12 : 13;
+		// read_retry_count_tailcut_1 = (randomNumber < 0.9* 4294967295) ? 11 : 12;
+		// read_retry_count_star_1 = (randomNumber < 0.5* 4294967295) ? 7 : 8;
+
+		
+		// read_retry_count_lfsr_2 = (randomNumber < 0.3* 4294967295) ? 28 : 29;
+		// read_retry_count_tailcut_2 = (randomNumber < 0.6* 4294967295) ? 23 : 24;
+		// read_retry_count_star_2 = (randomNumber < 0.9* 4294967295) ? 12 : 13;
+
+
+		// read_retry_count = read_retry_count_tailcut_2;
+
+
+
+		//Baseline
 		if (ncmd->xfer_size == 4096) {
 			nand_etime = nand_stime + spp->pg_4kb_rd_lat[cell];
 		} else {
@@ -416,6 +457,65 @@ uint64_t ssd_advance_nand(struct ssd *ssd, struct nand_cmd *ncmd)
 			remaining -= xfer_size;
 			chnl_stime = chnl_etime;
 		}
+
+		// NAND INFO of completed time
+		NVMEV_INFO(
+			"SSD: %p, NAND Read completed time: %lld, ch %d lun %d blk %d page %d command %d ppa 0x%llx\n",
+			ssd, completed_time, ppa->g.ch, ppa->g.lun, ppa->g.blk, ppa->g.pg, c, ppa->ppa);
+		
+
+
+		//Considering the read retry count
+
+		//Read Retry
+		// for(rc = 0; rc <read_retry_count; rc++)
+		// {
+		// 	if (ncmd->xfer_size == 4096) {
+		// 		nand_etime = nand_stime + spp->pg_4kb_rd_lat[cell];
+		// 	} else {
+		// 		nand_etime = nand_stime + spp->pg_rd_lat[cell];
+		// 	}
+
+		// 	/* read: then data transfer through channel */
+		// 	chnl_stime = nand_etime;
+
+		// 	while (remaining) {
+		// 		xfer_size = min(remaining, (uint64_t)spp->max_ch_xfer_size);
+		// 		chnl_etime = chmodel_request(ch->perf_model, chnl_stime, xfer_size);
+		// 		// chnl_etime += ecc_decode_latency(spp, xfer_size);
+		// 		remaining -= xfer_size;
+		// 		chnl_stime = chnl_etime;
+		// 	}
+
+		// 	nand_stime = chnl_etime;
+		// }
+
+
+		// //Read the correct data
+		// if(ncmd->xfer_size == 4096)
+		// {
+		// 	nand_etime = nand_stime + spp->pg_4kb_rd_lat[cell];
+		// }
+		// else
+		// {
+		// 	nand_etime = nand_stime + spp->pg_rd_lat[cell];
+		// }
+
+		// chnl_stime = nand_etime;
+		// while (remaining) {
+		// 	xfer_size = min(remaining, (uint64_t)spp->max_ch_xfer_size);
+		// 	chnl_etime = chmodel_request(ch->perf_model, chnl_stime, xfer_size);
+		// 	// chnl_etime += ecc_decode_latency(spp, xfer_size);
+
+		// 	if (ncmd->interleave_pci_dma) { /* overlap pci transfer with nand ch transfer*/
+		// 		completed_time = ssd_advance_pcie(ssd, chnl_etime, xfer_size);
+		// 	} else {
+		// 		completed_time = chnl_etime;
+		// 	}
+
+		// 	remaining -= xfer_size;
+		// 	chnl_stime = chnl_etime;
+		// }
 
 		lun->next_lun_avail_time = chnl_etime;
 		break;

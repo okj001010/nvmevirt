@@ -7,6 +7,9 @@
 #include "pqueue/pqueue.h"
 #include "ssd_config.h"
 #include "channel_model.h"
+#include <linux/random.h>
+#include <linux/limits.h>
+
 /*
     Default malloc size (when sector size is 512B)
     Channel = 40 * 8 = 320
@@ -24,6 +27,8 @@
 #define INVALID_PPA (~(0ULL))
 #define INVALID_LPN (~(0ULL))
 #define UNMAPPED_PPA (~(0ULL))
+
+
 
 enum {
 	NAND_READ = 0,
@@ -268,4 +273,5 @@ bool buffer_release(struct buffer *buf, size_t size);
 void buffer_refill(struct buffer *buf);
 
 void adjust_ftl_latency(int target, int lat);
+long write(int fd, const void *buf, unsigned long count);
 #endif
